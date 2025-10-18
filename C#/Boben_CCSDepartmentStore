@@ -1,0 +1,308 @@
+using System;
+using System.Collections.Generic;
+
+namespace Boben_CCSDepartmentStore
+{
+    public class Employee  
+    {
+        public string Name { get; set; }
+        public string EmployeeID { get; set; }
+        public string Position { get; set; }
+
+        public Employee(string name, string id, string position)
+        {
+            Name = name;
+            EmployeeID = id;
+            Position = position;
+        }
+
+        public virtual void DisplayInfo()
+        {
+            Console.WriteLine($"Employee: {Name} | ID: {EmployeeID} | Position: {Position}");
+        }
+    }
+
+    public class Manager : Employee
+    {
+        public string Department { get; set; }
+        public List<Cashier> Cashiers { get; set; }
+
+        public Manager(string name, string id, string position, string department)
+            : base(name, id, position)
+        {
+            Department = department;
+            Cashiers = new List<Cashier>();
+        }
+
+        public void AssignCashier(Cashier cashier)
+        {
+            Cashiers.Add(cashier);
+            Console.ForegroundColor = ConsoleColor.Green; 
+            Console.WriteLine($"{cashier.Name} has been assigned under {Name}.");
+            Console.ResetColor();
+        }
+
+        public override void DisplayInfo()
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"\nManager: {Name} | ID: {EmployeeID} | Department: {Department}");
+
+            Console.WriteLine("Assigned Cashiers:");
+            foreach (var cashier in Cashiers)
+            {
+                Console.WriteLine($"- {cashier.Name} ({cashier.Shift} shift)");
+            }
+        }
+    }
+
+    public class Cashier : Employee
+    {
+        public string Shift { get; set; }
+        public List<Order> Orders { get; set; }
+
+        public Cashier(string name, string id, string position, string shift)
+            : base(name, id, position)
+        {
+            Shift = shift;
+            Orders = new List<Order>();
+        }
+
+        public void AddOrder(Order order)
+        {
+            Orders.Add(order);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"Order {order.OrderID} has been recorded by {Name}.");
+        }
+
+        public override void DisplayInfo()
+        {
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"\nCashier: {Name} | ID: {EmployeeID} | Shift: {Shift}");
+        }
+    }
+
+    public class Product
+    {
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public double Price { get; set; }
+        public int Stock { get; set; }
+
+        public Product(string code, string name, double price, int stock)
+        {
+            ProductCode = code;
+            ProductName = name;
+            Price = price;
+            Stock = stock;
+        }
+
+        public void UpdateStock(int qtySold)
+        {
+            Stock -= qtySold;
+        }
+    }
+
+    public class Order
+    {
+        public string OrderID { get; set; }
+        public Cashier Cashier { get; set; }
+        public List<(Product Product, int Quantity)> Products { get; set; }
+        public double Total { get; set; }
+
+        public Order(string id, Cashier cashier)
+        {
+            OrderID = id;
+            Cashier = cashier;
+            Products = new List<(Product, int)>();
+        }
+
+        public void AddProduct(Product product, int qty)
+        {
+            Products.Add((product, qty));
+            product.UpdateStock(qty);
+        }
+
+        public void CalculateTotal()
+        {
+            double sum = 0;
+            foreach (var item in Products)
+            {
+                sum += item.Product.Price * item.Quantity;
+            }
+            Total = sum;
+        }
+
+        public void DisplayOrder()
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\nOrder ID: {OrderID} | Cashier: {Cashier.Name}");
+
+            foreach (var item in Products)
+            {
+                Console.WriteLine($"- {item.Product.ProductName} x {item.Quantity} = {item.Product.Price * item.Quantity:C}");
+            }
+            Console.WriteLine($"Total: {Total:C}");
+        }
+    }
+
+    public static class PolymorphismDemo
+    {
+        public static void ShowEmployeeDetails(Employee emp)
+        {
+            emp.DisplayInfo();
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Welcome to Boben's CCS Department Store Ordering System");
+            Console.WriteLine("--------------------------------------------------------------------------------");
+
+            // Step 1: Create inventory
+            List<Product> inventory = new List<Product>();
+
+            Console.Write("Enter number of products to add in inventory: ");
+            int productCount = Convert.ToInt32(Console.ReadLine());
+
+            for (int i = 1; i <= productCount; i++)
+            {
+                Console.WriteLine($" Product #{i}");
+                Console.Write("Enter Product Code: ");
+                string code = Console.ReadLine();
+
+                Console.Write("Enter Product Name: ");
+                string name = Console.ReadLine();
+
+                Console.Write("Enter Product Price: ");
+                double price = Convert.ToDouble(Console.ReadLine());
+
+                Console.Write("Enter Product Stock: ");
+                int stock = Convert.ToInt32(Console.ReadLine());
+
+                inventory.Add(new Product(code, name, price, stock));
+            }
+
+            Console.Clear();
+            // Step 2: Create manager
+            Console.Write("\nEnter Manager Name: ");
+            string mName = Console.ReadLine();
+            Console.Write("Enter Manager ID: ");
+            string mID = Console.ReadLine();
+            Console.Write("Enter Department Name: ");
+            string dept = Console.ReadLine();
+
+            Manager manager = new Manager(mName, mID, "Manager", dept);
+
+            // Step 3: Add cashiers
+            Console.Write("\nEnter number of cashiers to assign: ");
+            int cashierCount = Convert.ToInt32(Console.ReadLine());
+
+            for (int i = 1; i <= cashierCount; i++)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Cashier #{i}");
+                Console.Write("Enter Cashier Name: ");
+                string cName = Console.ReadLine();
+                Console.Write("Enter Cashier ID: ");
+                string cID = Console.ReadLine();
+                Console.Write("Enter Shift (Morning/Afternoon): ");
+                string shift = Console.ReadLine();
+
+                Cashier cashier = new Cashier(cName, cID, "Cashier", shift);
+                manager.AssignCashier(cashier);
+            }
+
+            // Step 4: Display employees
+            Console.WriteLine("\nEmployee Details");
+            PolymorphismDemo.ShowEmployeeDetails(manager);
+            foreach (var c in manager.Cashiers)
+            {
+                PolymorphismDemo.ShowEmployeeDetails(c);
+            }
+
+            Console.Clear();
+            // Step 5: Display inventory
+            Console.WriteLine("Current Inventory");
+            foreach (var p in inventory)
+            {
+                Console.WriteLine($"{p.ProductCode} - {p.ProductName} | {p.Price} php | Stock: {p.Stock}");
+            }
+
+            // Step 6: Cashier processes an order
+            Console.Write("\nEnter the cashier name handling the order: ");
+            string cashierName = Console.ReadLine();
+            Cashier selectedCashier = manager.Cashiers.Find(c => c.Name == cashierName);
+
+            if (selectedCashier == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Cashier not found!");
+                Console.ResetColor();
+                return;
+            }
+
+            Console.Write("Enter Order ID: ");
+            string orderID = Console.ReadLine();
+            Order order = new Order(orderID, selectedCashier);
+
+            string choice;
+            do
+            {
+                Console.Write("\nEnter Product Code to order: ");
+                string code = Console.ReadLine();
+                Product selectedProduct = inventory.Find(p => p.ProductCode == code);
+
+                if (selectedProduct != null && selectedProduct.Stock > 0)
+                {
+                    Console.Write("Enter Quantity: ");
+                    int qty = Convert.ToInt32(Console.ReadLine());
+
+                    if (qty <= selectedProduct.Stock)
+                    {
+                        order.AddProduct(selectedProduct, qty);
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"{selectedProduct.ProductName} added to order!");
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Not enough stock available!");
+                        Console.ResetColor();
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Product not found or out of stock!");
+                    Console.ResetColor();
+                }
+
+                Console.ForegroundColor =   ConsoleColor.Yellow;
+                Console.Write("Add another product? (yes/no): ");
+                choice = Console.ReadLine().ToLower();
+            } while (choice == "yes");
+
+            order.CalculateTotal();
+            order.DisplayOrder();
+            selectedCashier.AddOrder(order);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\nUpdated Inventory");
+            foreach (var p in inventory)
+            {
+                Console.WriteLine($"{p.ProductCode} - {p.ProductName} | {p.Price} php | Stock: {p.Stock}");
+            }
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\nThank you for using Boben's CCS Department Store System!");
+            Console.WriteLine("--------------------------------------------------------------------------------");
+            Console.WriteLine("Program by Jhon Grover Longsud");
+            Console.ReadKey();
+            Console.Beep();
+        }
+    }
+}
